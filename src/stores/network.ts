@@ -1,15 +1,15 @@
 import { reactive } from 'vue'
-import * as Nimiq from '@nimiq/core'
+import initNimiq, { Client, ClientConfiguration, KeyPair } from '@nimiq/core/web'
 
 // Reactive object for storing the client, the current consensus state, and the latest head of the nimiq blockchain
 export const nimiqNetwork = reactive({
-  client: null as Nimiq.Client | null,
-  consensus: 'CONNECTING' as string, // current consensus state, default is connecting
-  address: '' as string,
-  balance: 0 as number,
-  readyToReceive: true as boolean, // true if faucet is available
-  loading: true as boolean, // true if loading
-  faucetResponse: '' as string, // response from the faucet
+  client: null as Client | null,
+  consensus: 'CONNECTING', // current consensus state, default is connecting
+  address: '',
+  balance: 0,
+  readyToReceive: true, // true if faucet is available
+  loading: true, // true if loading
+  faucetResponse: '', // response from the faucet
 })
 
 // Function to establish a connection to the nimiq network
@@ -17,11 +17,13 @@ export async function setupNimiqNetwork() {
   try {
     nimiqNetwork.loading = true // activate spinner
 
+    await initNimiq()
+
     // configure client
-    const config = new Nimiq.ClientConfiguration()
+    const config = new ClientConfiguration()
     config.logLevel('debug')
     config.network('TestAlbatross')
-    nimiqNetwork.client = await Nimiq.Client.create(config.build())
+    nimiqNetwork.client = await Client.create(config.build())
 
     // listen for consensus state changes
     nimiqNetwork.client?.addConsensusChangedListener(async (state) => {
@@ -46,7 +48,7 @@ export async function setupNimiqNetwork() {
 
 // Function to create a new wallet, thus an address
 export async function createWallet() {
-  const keyPair = Nimiq.KeyPair.generate() // generate a new keypair
+  const keyPair = KeyPair.generate() // generate a new keypair
   const address = keyPair.toAddress() // convert the keypair to an address
   nimiqNetwork.address = address.toUserFriendlyAddress() // update the address
   localStorage.setItem('walletAddress', nimiqNetwork.address) // Save address to local storage
